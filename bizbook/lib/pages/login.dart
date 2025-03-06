@@ -1,4 +1,5 @@
-import 'package:bizbook/pages/dashboard.dart';
+import 'package:bizbook/backend/auth.dart';
+import 'package:bizbook/pages/dashboard.dart'; // Import AuthService
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -8,8 +9,11 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
-  final _mobileController = TextEditingController();
+  final _emailController =
+      TextEditingController(); // Renamed from _mobileController
   final _passwordController = TextEditingController();
+  final AuthService _authService = AuthService(); // Initialize AuthService
+  bool _isLoading = false; // Add loading state
 
   @override
   Widget build(BuildContext context) {
@@ -73,8 +77,8 @@ class _LoginPageState extends State<LoginPage> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextField(
-                      controller: _mobileController,
-                      onChanged: (value) {},
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: 'Enter Email Address',
                         border: OutlineInputBorder(),
@@ -114,34 +118,62 @@ class _LoginPageState extends State<LoginPage> {
                               TextStyle(color: Colors.grey[600], fontSize: 12),
                         ),
                         onPressed: () {
-                          //TODO
+                          //TODO: Implement password reset
                         },
                       ),
                     ),
                     SizedBox(height: 15),
-                    ElevatedButton(
-                      child: Text('Login'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 50),
-                      ),
-                      onPressed: () {
-                        if (_passwordController.text == "123456") {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const Dashboard(),
+                    _isLoading
+                        ? Center(child: CircularProgressIndicator())
+                        : ElevatedButton(
+                            child: Text('Login'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: Size(double.infinity, 50),
                             ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Invalid email or password!'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                            onPressed: () async {
+                              if (_emailController.text.isEmpty ||
+                                  _passwordController.text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Please enter email and password'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setState(() {
+                                _isLoading = true;
+                              });
+
+                              final user =
+                                  await _authService.signInWithEmailAndPassword(
+                                _emailController.text,
+                                _passwordController.text,
+                              );
+
+                              setState(() {
+                                _isLoading = false;
+                              });
+
+                              if (user != null) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const Dashboard(),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Invalid email or password!'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
                     SizedBox(height: 15),
                     Center(
                       child: RichText(

@@ -1,3 +1,4 @@
+import 'package:bizbook/pages/dashboard.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,6 +13,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Color(0xFF5F7C58),
       body: Center(
@@ -24,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   children: [
                     TextSpan(
-                        text: 'Biz',
+                        text: 'BiZ',
                         style: TextStyle(color: Color(0xFFE2AD38))),
                     TextSpan(
                         text: 'Book', style: TextStyle(color: Colors.white)),
@@ -38,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 20),
               Container(
-                width: 300,
+                width: width - width / 30,
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -67,13 +69,14 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: 20),
                     Text(
-                      'Mobile Number',
+                      'Email Address',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextField(
                       controller: _mobileController,
+                      onChanged: (value) {},
                       decoration: InputDecoration(
-                        hintText: 'Enter mobile number',
+                        hintText: 'Enter Email Address',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -111,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                               TextStyle(color: Colors.grey[600], fontSize: 12),
                         ),
                         onPressed: () {
-                          // Implement forgot password functionality
+                          //TODO
                         },
                       ),
                     ),
@@ -122,7 +125,21 @@ class _LoginPageState extends State<LoginPage> {
                         minimumSize: Size(double.infinity, 50),
                       ),
                       onPressed: () {
-                        // Implement login functionality
+                        if (_passwordController.text == "123456") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const Dashboard(),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Invalid email or password!'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       },
                     ),
                     SizedBox(height: 15),

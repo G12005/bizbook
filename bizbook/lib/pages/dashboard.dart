@@ -1,3 +1,5 @@
+import 'package:bizbook/pages/inventory.dart';
+import 'package:bizbook/widget/appbar.dart';
 import 'package:flutter/material.dart';
 
 class Dashboard extends StatelessWidget {
@@ -6,61 +8,11 @@ class Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: appbaar('Dashboard'),
+      drawer: drawer(context, 'Dashboard'),
       body: Column(
         children: [
           // App Bar
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            color: const Color(0xFF7BA37E),
-            child: SafeArea(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Icon(Icons.menu, color: Colors.white, size: 28),
-                  const Text(
-                    'Dashboard',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Stack(
-                    children: [
-                      const Icon(Icons.notifications,
-                          color: Colors.white, size: 28),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: Colors.amber,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: const Text(
-                            '1',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           // Dashboard Content
           Expanded(
             child: Container(
@@ -84,10 +36,18 @@ class Dashboard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: DashboardCard(
-                            title: 'Inventory',
-                            icon: 'assets/inventory_icon.png',
-                            height: 160,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => InventoryScreen()));
+                            },
+                            child: DashboardCard(
+                              title: 'Inventory',
+                              icon: 'assets/inventory_icon.png',
+                              height: 160,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -167,14 +127,14 @@ class DashboardCard extends StatelessWidget {
   final bool useAvatar;
 
   const DashboardCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.icon,
     required this.height,
     this.width,
     this.iconSize = 50,
     this.useAvatar = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -221,17 +181,19 @@ class DashboardCard extends StatelessWidget {
               errorBuilder: (context, error, stackTrace) {
                 IconData iconData = Icons.description;
 
-                if (title == 'Inventory')
+                if (title == 'Inventory') {
                   iconData = Icons.inventory_2;
-                else if (title == 'Customers')
+                } else if (title == 'Customers') {
                   iconData = Icons.people;
-                else if (title == 'Billings')
+                } else if (title == 'Billings') {
                   iconData = Icons.receipt;
-                else if (title == 'Reports')
+                } else if (title == 'Reports') {
                   iconData = Icons.bar_chart;
-                else if (title == 'Settings')
+                } else if (title == 'Settings') {
                   iconData = Icons.settings;
-                else if (title == 'Profile') iconData = Icons.person;
+                } else if (title == 'Profile') {
+                  iconData = Icons.person;
+                }
 
                 return Icon(
                   iconData,

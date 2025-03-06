@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "80420601634",
+    "project_id": "bizbook-8115d",
+    "storage_bucket": "bizbook-8115d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:80420601634:android:aceaaf45709a45d2356f7b",
+        "android_client_info": {
+          "package_name": "com.example.bizbook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqWzt7Auc7x8iF7XVOA_KwnyheqDqBjZg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

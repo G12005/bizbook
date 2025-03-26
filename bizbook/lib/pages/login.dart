@@ -1,5 +1,7 @@
 import 'package:bizbook/backend/auth.dart';
 import 'package:bizbook/pages/dashboard.dart'; // Import AuthService
+import 'package:bizbook/pages/forget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -118,7 +120,12 @@ class _LoginPageState extends State<LoginPage> {
                               TextStyle(color: Colors.grey[600], fontSize: 12),
                         ),
                         onPressed: () {
-                          //TODO: Implement password reset
+                          Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                              builder: (context) => ForgetPage(),
+                            ),
+                          );
                         },
                       ),
                     ),

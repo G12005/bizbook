@@ -1,7 +1,12 @@
+import 'package:bizbook/backend/auth.dart';
 import 'package:bizbook/pages/dashboard.dart';
+import 'package:bizbook/pages/inventory.dart';
+import 'package:bizbook/pages/login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 Widget drawer(BuildContext context, String name) {
+  User? user = FirebaseAuth.instance.currentUser;
   return Drawer(
     child: ListView(
       padding: EdgeInsets.zero,
@@ -12,26 +17,32 @@ Widget drawer(BuildContext context, String name) {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               CircleAvatar(
                 radius: 30,
                 backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  size: 40,
-                  color: Color(0xFF7BA37E),
-                ),
+                child: user!.photoURL != null
+                    ? SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: Image.network(user.photoURL ?? ""),
+                      )
+                    : Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Color(0xFF7BA37E),
+                      ),
               ),
               SizedBox(height: 10),
               Text(
-                'User Name',
+                user.displayName ?? "",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                 ),
               ),
               Text(
-                'user@example.com',
+                user.email ?? "",
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 14,
@@ -45,6 +56,7 @@ Widget drawer(BuildContext context, String name) {
           title: const Text('Dashboard'),
           selected: name == "Dashboard" ? true : false,
           onTap: () {
+            if (name == "Dashboard") return;
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -59,7 +71,13 @@ Widget drawer(BuildContext context, String name) {
           selected: name == "Inventory" ? true : false,
           selectedTileColor: Colors.green.withOpacity(0.1),
           onTap: () {
-            Navigator.pop(context);
+            if (name != "Inventory") return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => InventoryScreen(),
+              ),
+            );
           },
         ),
         ListTile(
@@ -99,8 +117,13 @@ Widget drawer(BuildContext context, String name) {
           leading: const Icon(Icons.logout),
           title: const Text('Logout'),
           onTap: () {
-            Navigator.pop(context);
-            // Implement logout functionality
+            AuthService().signOut();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LoginPage(),
+              ),
+            );
           },
         ),
       ],
@@ -108,8 +131,31 @@ Widget drawer(BuildContext context, String name) {
   );
 }
 
+AppBar backAppBar(String name, BuildContext context, List<Widget>? actions) {
+  return AppBar(
+    actions: actions,
+    backgroundColor: Color(0xFF7BA37E),
+    leading: IconButton(
+      onPressed: () {
+        Navigator.pop(context);
+      },
+      icon: Icon(
+        Icons.arrow_back_ios_outlined,
+        color: Colors.white,
+      ),
+    ),
+    title: Text(
+      name,
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
+}
+
 AppBar appbaar(String name) {
-  int _notificationCount = 1; // Example notification count
+  int notificationCount = 1; // Example notification count
   return AppBar(
     backgroundColor: const Color(0xFF7BA37E),
     title: Text(
@@ -117,6 +163,7 @@ AppBar appbaar(String name) {
       style: const TextStyle(
         fontSize: 24,
         fontWeight: FontWeight.bold,
+        color: Colors.white,
       ),
     ),
     leading: Builder(
@@ -135,10 +182,10 @@ AppBar appbaar(String name) {
                 const Icon(Icons.notifications, color: Colors.white, size: 28),
             onPressed: () {
               // Show notifications
-              _notificationCount = 0; // Clear notifications when viewed
+              notificationCount = 0; // Clear notifications when viewed
             },
           ),
-          if (_notificationCount > 0)
+          if (notificationCount > 0)
             Positioned(
               right: 8,
               top: 8,
@@ -153,7 +200,7 @@ AppBar appbaar(String name) {
                   minHeight: 16,
                 ),
                 child: Text(
-                  _notificationCount.toString(),
+                  notificationCount.toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,

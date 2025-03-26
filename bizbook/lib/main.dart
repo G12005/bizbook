@@ -1,14 +1,22 @@
+import 'package:bizbook/backend/auth.dart';
 import 'package:bizbook/firebase_options.dart';
+import 'package:bizbook/pages/dashboard.dart';
 import 'package:bizbook/pages/login.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AuthService()..checkAuthStatus(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -17,6 +25,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
     return MaterialApp(
         title: 'BiZBook',
         debugShowCheckedModeBanner: false,
@@ -39,6 +48,6 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
-        home: LoginPage());
+        home: authService.isAuthenticated ? const Dashboard() : LoginPage());
   }
 }

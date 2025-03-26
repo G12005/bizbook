@@ -57,6 +57,8 @@ class DefaultFirebaseOptions {
     appId: '1:80420601634:android:aceaaf45709a45d2356f7b',
     messagingSenderId: '80420601634',
     projectId: 'bizbook-8115d',
+    databaseURL: 'https://bizbook-8115d-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'bizbook-8115d.firebasestorage.app',
   );
+
 }

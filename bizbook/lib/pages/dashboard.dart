@@ -1,4 +1,8 @@
+import 'package:bizbook/pages/add_sale.dart';
+import 'package:bizbook/pages/daily_summary.dart';
 import 'package:bizbook/pages/inventory.dart';
+import 'package:bizbook/pages/manage_customers.dart';
+import 'package:bizbook/pages/reports.dart';
 import 'package:bizbook/widget/appbar.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +14,24 @@ class Dashboard extends StatelessWidget {
     return Scaffold(
       appBar: appbaar('Dashboard'),
       drawer: drawer(context, 'Dashboard'),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Color(0xFF8B5E5A),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddSaleScreen(),
+            ),
+          );
+        },
+        label: Text(
+          "Add Sales +",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
       body: Column(
         children: [
           // App Bar
@@ -22,12 +44,22 @@ class Dashboard extends StatelessWidget {
                 child: Column(
                   children: [
                     // Daily Summary Card
-                    DashboardCard(
-                      title: 'Daily Summary',
-                      icon: 'assets/document_icon.png',
-                      height: 160,
-                      width: double.infinity,
-                      iconSize: 60,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DailySummaryScreen(),
+                          ),
+                        );
+                      },
+                      child: DashboardCard(
+                        title: 'Daily Summary',
+                        icon: 'assets/document_icon.png',
+                        height: 160,
+                        width: double.infinity,
+                        iconSize: 60,
+                      ),
                     ),
 
                     const SizedBox(height: 16),
@@ -39,9 +71,11 @@ class Dashboard extends StatelessWidget {
                           child: GestureDetector(
                             onTap: () {
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => InventoryScreen()));
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => InventoryScreen(),
+                                ),
+                              );
                             },
                             child: DashboardCard(
                               title: 'Inventory',
@@ -52,10 +86,20 @@ class Dashboard extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: DashboardCard(
-                            title: 'Customers',
-                            icon: 'assets/customers_icon.png',
-                            height: 160,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CustomersScreen(),
+                                ),
+                              );
+                            },
+                            child: DashboardCard(
+                              title: 'Customers',
+                              icon: 'assets/customers_icon.png',
+                              height: 160,
+                            ),
                           ),
                         ),
                       ],
@@ -75,10 +119,20 @@ class Dashboard extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: DashboardCard(
-                            title: 'Reports',
-                            icon: 'assets/reports_icon.png',
-                            height: 160,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ReportsPage(),
+                                ),
+                              );
+                            },
+                            child: DashboardCard(
+                              title: 'Reports',
+                              icon: 'assets/reports_icon.png',
+                              height: 160,
+                            ),
                           ),
                         ),
                       ],

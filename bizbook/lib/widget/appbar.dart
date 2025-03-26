@@ -2,6 +2,7 @@ import 'package:bizbook/backend/auth.dart';
 import 'package:bizbook/pages/dashboard.dart';
 import 'package:bizbook/pages/inventory.dart';
 import 'package:bizbook/pages/login.dart';
+import 'package:bizbook/pages/manage_customers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -55,6 +56,7 @@ Widget drawer(BuildContext context, String name) {
           leading: const Icon(Icons.dashboard),
           title: const Text('Dashboard'),
           selected: name == "Dashboard" ? true : false,
+          selectedTileColor: Colors.green.withOpacity(0.1),
           onTap: () {
             if (name == "Dashboard") return;
             Navigator.pushReplacement(
@@ -71,7 +73,7 @@ Widget drawer(BuildContext context, String name) {
           selected: name == "Inventory" ? true : false,
           selectedTileColor: Colors.green.withOpacity(0.1),
           onTap: () {
-            if (name != "Inventory") return;
+            if (name == "Inventory") return;
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -83,9 +85,16 @@ Widget drawer(BuildContext context, String name) {
         ListTile(
           leading: const Icon(Icons.people),
           title: const Text('Customers'),
+          selected: name == "Customers" ? true : false,
+          selectedTileColor: Colors.green.withOpacity(0.1),
           onTap: () {
-            Navigator.pop(context);
-            // Navigate to customers
+            if (name == "Customers") return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CustomersScreen(),
+              ),
+            );
           },
         ),
         ListTile(

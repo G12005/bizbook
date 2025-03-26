@@ -1,3 +1,5 @@
+import 'package:bizbook/backend/auth.dart';
+import 'package:bizbook/backend/inventory.dart';
 import 'package:bizbook/widget/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -6,36 +8,36 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
 
-class InventoryItem {
-  final String id;
-  final String name;
-  final double price;
-  final String imageUrl;
+// class InventoryItem {
+//   final String id;
+//   final String name;
+//   final double price;
+//   final String imageUrl;
 
-  InventoryItem({
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.imageUrl,
-  });
+//   InventoryItem({
+//     required this.id,
+//     required this.name,
+//     required this.price,
+//     required this.imageUrl,
+//   });
 
-  factory InventoryItem.fromMap(String id, Map<dynamic, dynamic> map) {
-    return InventoryItem(
-      id: id,
-      name: map['name'] ?? 'Unknown Item',
-      price: (map['price'] ?? 0.0).toDouble(),
-      imageUrl: map['imageUrl'] ?? '',
-    );
-  }
+//   factory InventoryItem.fromMap(String id, Map<dynamic, dynamic> map) {
+//     return InventoryItem(
+//       id: id,
+//       name: map['name'] ?? 'Unknown Item',
+//       price: (map['price'] ?? 0.0).toDouble(),
+//       imageUrl: map['imageUrl'] ?? '',
+//     );
+//   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'price': price,
-      'imageUrl': imageUrl,
-    };
-  }
-}
+//   Map<String, dynamic> toMap() {
+//     return {
+//       'name': name,
+//       'price': price,
+//       'imageUrl': imageUrl,
+//     };
+//   }
+// }
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -78,7 +80,8 @@ class InventoryScreenState extends State<InventoryScreen> {
         });
       }
     }, onError: (error) {
-      print('Error loading inventory: $error');
+      if (!mounted) return;
+      AuthService().showToast(context, "Error loading inventory", false);
       setState(() {
         _isLoading = false;
       });
@@ -96,10 +99,8 @@ class InventoryScreenState extends State<InventoryScreen> {
     );
 
     if (result == true) {
-      // Item was added, refresh will happen automatically due to Firebase listener
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item added successfully')),
-      );
+      if (!mounted) return;
+      AuthService().showToast(context, "Item added successfully", true);
     }
   }
 
@@ -116,9 +117,8 @@ class InventoryScreenState extends State<InventoryScreen> {
 
     if (result == true) {
       // Item was updated, refresh will happen automatically due to Firebase listener
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item updated successfully')),
-      );
+      if (!mounted) return;
+      AuthService().showToast(context, "Item updated successfully", true);
     }
   }
 
@@ -149,8 +149,12 @@ class InventoryScreenState extends State<InventoryScreen> {
                   },
                 ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Color(0xFF8B5E5A),
         onPressed: _addInventoryItem,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -161,10 +165,10 @@ class InventoryItemCard extends StatelessWidget {
   final VoidCallback onEdit;
 
   const InventoryItemCard({
-    Key? key,
+    super.key,
     required this.item,
     required this.onEdit,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +219,7 @@ class InventoryItemCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
                 child: Text(
-                  '\$${item.price.toStringAsFixed(2)}',
+                  '₹${item.price.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -255,20 +259,20 @@ class EditInventoryItemScreen extends StatefulWidget {
   final InventoryItem? item;
 
   const EditInventoryItemScreen({
-    Key? key,
+    super.key,
     required this.isNewItem,
     this.item,
-  }) : super(key: key);
+  });
 
   @override
-  _EditInventoryItemScreenState createState() =>
-      _EditInventoryItemScreenState();
+  EditInventoryItemScreenState createState() => EditInventoryItemScreenState();
 }
 
-class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
+class EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
+  final _qtyController = TextEditingController();
   final DatabaseReference _database =
       FirebaseDatabase.instance.ref().child('inventory');
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -283,6 +287,7 @@ class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
     if (!widget.isNewItem && widget.item != null) {
       _nameController.text = widget.item!.name;
       _priceController.text = widget.item!.price.toString();
+      _qtyController.text = widget.item!.quantity.toString();
       _imageUrl = widget.item!.imageUrl;
     }
   }
@@ -309,16 +314,16 @@ class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
     if (_imageFile == null) return _imageUrl;
 
     try {
-      final fileName = path.basename(_imageFile!.path);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final String fileName =
+          'inventory_image_${timestamp}_${path.basename(_imageFile!.path)}';
       final storageRef = _storage.ref().child('inventory_images/$fileName');
       final uploadTask = storageRef.putFile(_imageFile!);
       final snapshot = await uploadTask;
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
-      print('Error uploading image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload image: $e')),
-      );
+      if (!mounted) return '';
+      AuthService().showToast(context, "Error uploading image", false);
       return '';
     }
   }
@@ -339,22 +344,26 @@ class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
         name: _nameController.text,
         price: double.parse(_priceController.text),
         imageUrl: imageUrl,
+        quantity: int.parse(_qtyController.text),
+        createdAt: widget.isNewItem ? DateTime.now() : widget.item!.createdAt,
+        updatedAt: DateTime.now(),
+        lastTimeStamp: DateTime.now(),
       );
 
       if (widget.isNewItem) {
         // Add new item
-        await _database.push().set(item.toMap());
+        final newItemRef = _database.push();
+        await newItemRef.set(item.toMap());
       } else {
         // Update existing item
         await _database.child(widget.item!.id).update(item.toMap());
       }
 
+      if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
-      print('Error saving item: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save item: $e')),
-      );
+      if (!mounted) return;
+      AuthService().showToast(context, "Failed to save item", false);
       setState(() {
         _isLoading = false;
       });
@@ -390,12 +399,11 @@ class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
 
     try {
       await _database.child(widget.item!.id).remove();
+      if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
-      print('Error deleting item: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete item: $e')),
-      );
+      if (!mounted) return;
+      AuthService().showToast(context, "Failed to delete item", false);
       setState(() {
         _isLoading = false;
       });
@@ -405,12 +413,10 @@ class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.isNewItem ? 'Add Inventory Item' : 'Edit Inventory Item',
-          style: const TextStyle(color: Colors.white),
-        ),
-        actions: [
+      appBar: backAppBar(
+        widget.isNewItem ? 'Add Inventory Item' : 'Edit Inventory Item',
+        context,
+        [
           if (!widget.isNewItem)
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.white),
@@ -502,13 +508,32 @@ class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Price',
                         border: OutlineInputBorder(),
-                        prefixText: '\$',
+                        prefixText: '₹',
                       ),
                       keyboardType:
                           TextInputType.numberWithOptions(decimal: true),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a price';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _qtyController,
+                      decoration: const InputDecoration(
+                        labelText: 'Qty',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a Qty';
                         }
                         if (double.tryParse(value) == null) {
                           return 'Please enter a valid number';
@@ -531,6 +556,7 @@ class _EditInventoryItemScreenState extends State<EditInventoryItemScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ),

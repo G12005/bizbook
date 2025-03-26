@@ -19,7 +19,6 @@ class CustomersScreenState extends State<CustomersScreen> {
   List<Customer> _filteredCustomers = [];
   bool _isLoading = true;
   String _searchQuery = '';
-  int _notificationCount = 1; // Example notification count
   String _sortBy = 'name'; // Default sort
   bool _sortAscending = true;
 

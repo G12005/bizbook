@@ -2,7 +2,6 @@ import 'package:bizbook/backend/customer.dart';
 import 'package:bizbook/backend/inventory.dart';
 import 'package:bizbook/backend/sale_model.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/material.dart';
 
 class DatabaseRepository {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
@@ -19,8 +18,6 @@ class DatabaseRepository {
       salesData.forEach((key, value) {
         salesList.add(Sale.fromMap(key, value));
       });
-
-      print(salesList);
 
       return salesList;
     } catch (e) {

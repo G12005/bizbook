@@ -1,3 +1,4 @@
+import 'package:bizbook/backend/auth.dart';
 import 'package:bizbook/backend/customer.dart';
 import 'package:bizbook/backend/inventory.dart';
 import 'package:bizbook/backend/sale_model.dart';
@@ -105,6 +106,19 @@ class AddSaleScreenState extends State<AddSaleScreen> {
       if (existingItemIndex >= 0) {
         // Increment quantity if item already exists
         final existingItem = _saleItems[existingItemIndex];
+        final inventoryItem = _inventoryItems
+            .firstWhere((inventoryItem) => inventoryItem.id == item.id);
+
+        // Check if adding more exceeds inventory quantity
+        if (existingItem.quantity + 1 > inventoryItem.quantity) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text('Cannot add more ${item.name}, not enough stock')),
+          );
+          return;
+        }
+
         _saleItems[existingItemIndex] = SaleItem(
           itemId: existingItem.itemId,
           itemName: existingItem.itemName,
@@ -114,6 +128,13 @@ class AddSaleScreenState extends State<AddSaleScreen> {
         );
       } else {
         // Add new item with quantity 1
+        if (item.quantity <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${item.name} is out of stock')),
+          );
+          return;
+        }
+
         _saleItems.add(SaleItem(
           itemId: item.id,
           itemName: item.name,
@@ -121,6 +142,29 @@ class AddSaleScreenState extends State<AddSaleScreen> {
           quantity: 1,
           imageUrl: item.imageUrl,
         ));
+      }
+
+      // Reduce the quantity of the item in inventory
+      final inventoryItemIndex = _inventoryItems
+          .indexWhere((inventoryItem) => inventoryItem.id == item.id);
+      if (inventoryItemIndex >= 0) {
+        final inventoryItem = _inventoryItems[inventoryItemIndex];
+        if (inventoryItem.quantity > 0) {
+          _inventoryItems[inventoryItemIndex] = InventoryItem(
+            id: inventoryItem.id,
+            name: inventoryItem.name,
+            price: inventoryItem.price,
+            quantity: inventoryItem.quantity - 1,
+            imageUrl: inventoryItem.imageUrl,
+            createdAt: inventoryItem.createdAt,
+            updatedAt: inventoryItem.updatedAt,
+            lastTimeStamp: inventoryItem.lastTimeStamp,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${item.name} is out of stock')),
+          );
+        }
       }
     });
   }
@@ -137,8 +181,21 @@ class AddSaleScreenState extends State<AddSaleScreen> {
       return;
     }
 
+    final item = _saleItems[index];
+    final inventoryItem = _inventoryItems
+        .firstWhere((inventoryItem) => inventoryItem.id == item.itemId);
+
+    // Check if the new quantity exceeds inventory quantity
+    if (quantity > inventoryItem.quantity) {
+      AuthService().showToast(
+        context,
+        "Cannot increase quantity for ${item.itemName}, not enough stock",
+        false,
+      );
+      return;
+    }
+
     setState(() {
-      final item = _saleItems[index];
       _saleItems[index] = SaleItem(
         itemId: item.itemId,
         itemName: item.itemName,
@@ -169,16 +226,12 @@ class AddSaleScreenState extends State<AddSaleScreen> {
   Future<void> _saveSale() async {
     if (_formKey.currentState?.validate() != true) return;
     if (_selectedCustomer == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a customer')),
-      );
+      AuthService().showToast(context, 'Please select a customer', false);
       return;
     }
 
     if (_saleItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one item')),
-      );
+      AuthService().showToast(context, 'Please add at least one item', false);
       return;
     }
 
@@ -200,7 +253,7 @@ class AddSaleScreenState extends State<AddSaleScreen> {
         items: _saleItems,
         paymentMethod: _paymentMethod,
         notes: _notesController.text,
-        timestamp: 0,
+        timestamp: now.millisecondsSinceEpoch,
       );
 
       // Save sale to database
@@ -214,22 +267,53 @@ class AddSaleScreenState extends State<AddSaleScreen> {
         'totalOrders': ServerValue.increment(1),
       });
 
+      // Update inventory quantities
+      for (final saleItem in _saleItems) {
+        final inventoryItemIndex = _inventoryItems
+            .indexWhere((inventoryItem) => inventoryItem.id == saleItem.itemId);
+        if (inventoryItemIndex >= 0) {
+          final inventoryItem = _inventoryItems[inventoryItemIndex];
+          final newQuantity = inventoryItem.quantity - saleItem.quantity;
+
+          if (newQuantity < 0) {
+            if (!mounted) return;
+            AuthService().showToast(
+              context,
+              "Cannot decrease quantity for ${inventoryItem.name}, not enough stock",
+              false,
+            );
+            continue;
+          }
+
+          _inventoryItems[inventoryItemIndex] = InventoryItem(
+            id: inventoryItem.id,
+            name: inventoryItem.name,
+            price: inventoryItem.price,
+            quantity: newQuantity,
+            imageUrl: inventoryItem.imageUrl,
+            createdAt: inventoryItem.createdAt,
+            updatedAt: inventoryItem.updatedAt,
+            lastTimeStamp: inventoryItem.lastTimeStamp,
+          );
+
+          // Update the inventory in the database
+          await _database.child('inventory').child(inventoryItem.id).update({
+            'quantity': newQuantity,
+          });
+        }
+      }
+
       // Show success message and go back
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sale added successfully')),
-        );
+        AuthService().showToast(context, "Sale added successfully", true);
         Navigator.pop(context, true);
       }
     } catch (e) {
-      print('Error saving sale: $e');
       setState(() {
         _isSaving = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save sale: $e')),
-      );
+      if (!mounted) return;
+      AuthService().showToast(context, 'Failed to save sale: $e', false);
     }
   }
 
@@ -538,7 +622,13 @@ class AddSaleScreenState extends State<AddSaleScreen> {
                                     contentPadding: EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 12),
                                   ),
-                                  items: ['Paid', 'Credit']
+                                  items: [
+                                    'Cash',
+                                    'Credit Card',
+                                    'Debit Card',
+                                    'UPI',
+                                    'Bank Transfer'
+                                  ]
                                       .map((method) => DropdownMenuItem(
                                             value: method,
                                             child: Text(method),

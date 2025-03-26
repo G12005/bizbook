@@ -1,4 +1,5 @@
 import 'package:bizbook/pages/add_sale.dart';
+import 'package:bizbook/pages/billing.dart';
 import 'package:bizbook/pages/daily_summary.dart';
 import 'package:bizbook/pages/inventory.dart';
 import 'package:bizbook/pages/manage_customers.dart';
@@ -15,24 +16,6 @@ class Dashboard extends StatelessWidget {
     return Scaffold(
       appBar: appbaar('Dashboard'),
       drawer: drawer(context, 'Dashboard'),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Color(0xFF8B5E5A),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddSaleScreen(),
-            ),
-          );
-        },
-        label: Text(
-          "Add Sales +",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
       body: Column(
         children: [
           // App Bar
@@ -112,10 +95,20 @@ class Dashboard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: DashboardCard(
-                            title: 'Billings',
-                            icon: 'assets/billings_icon.png',
-                            height: 160,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Billing(),
+                                ),
+                              );
+                            },
+                            child: DashboardCard(
+                              title: 'Billings',
+                              icon: 'assets/billings_icon.png',
+                              height: 160,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -125,7 +118,8 @@ class Dashboard extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ReportsPage(),
+                                  builder: (context) =>
+                                      UnpaidOrdersReportScreen(),
                                 ),
                               );
                             },
@@ -145,10 +139,20 @@ class Dashboard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: DashboardCard(
-                            title: 'Settings',
-                            icon: 'assets/settings_icon.png',
-                            height: 160,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddSaleScreen(),
+                                ),
+                              );
+                            },
+                            child: DashboardCard(
+                              title: 'Add Sales',
+                              icon: 'assets/settings_icon.png',
+                              height: 160,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -203,6 +207,21 @@ class DashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    IconData iconData = Icons.description;
+
+    if (title == 'Inventory') {
+      iconData = Icons.inventory_2;
+    } else if (title == 'Customers') {
+      iconData = Icons.people;
+    } else if (title == 'Billings') {
+      iconData = Icons.receipt;
+    } else if (title == 'Reports') {
+      iconData = Icons.bar_chart;
+    } else if (title == 'Add Sales') {
+      iconData = Icons.shopping_bag_outlined;
+    } else if (title == 'Profile') {
+      iconData = Icons.person;
+    }
     return Container(
       height: height,
       width: width,
@@ -238,34 +257,10 @@ class DashboardCard extends StatelessWidget {
               ),
             )
           else
-            Image.asset(
-              icon,
-              width: iconSize,
-              height: iconSize,
-              // Fallback to placeholder icons if assets aren't available
-              errorBuilder: (context, error, stackTrace) {
-                IconData iconData = Icons.description;
-
-                if (title == 'Inventory') {
-                  iconData = Icons.inventory_2;
-                } else if (title == 'Customers') {
-                  iconData = Icons.people;
-                } else if (title == 'Billings') {
-                  iconData = Icons.receipt;
-                } else if (title == 'Reports') {
-                  iconData = Icons.bar_chart;
-                } else if (title == 'Settings') {
-                  iconData = Icons.settings;
-                } else if (title == 'Profile') {
-                  iconData = Icons.person;
-                }
-
-                return Icon(
-                  iconData,
-                  size: iconSize,
-                  color: const Color(0xFF8B5E5A),
-                );
-              },
+            Icon(
+              iconData,
+              size: iconSize,
+              color: const Color(0xFF8B5E5A),
             ),
         ],
       ),

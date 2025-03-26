@@ -44,7 +44,11 @@ dependencies:
   toastification: ^3.0.2
   intl: ^0.20.2
   fl_chart: ^0.70.2
-  uuid: ^4.5.1
+  whatsapp_share:
+    git:
+      refs: e1572b3
+      url: https://github.com/basitis/whatsapp_share
+  shared_preferences: ^2.5.2
 
 dev_dependencies:
   flutter_test:

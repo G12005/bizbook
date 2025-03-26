@@ -1,8 +1,11 @@
 import 'package:bizbook/backend/auth.dart';
+import 'package:bizbook/pages/add_sale.dart';
+import 'package:bizbook/pages/billing.dart';
 import 'package:bizbook/pages/dashboard.dart';
 import 'package:bizbook/pages/inventory.dart';
 import 'package:bizbook/pages/login.dart';
 import 'package:bizbook/pages/manage_customers.dart';
+import 'package:bizbook/pages/reports.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -99,26 +102,47 @@ Widget drawer(BuildContext context, String name) {
         ),
         ListTile(
           leading: const Icon(Icons.receipt),
+          selected: name == "Billings" ? true : false,
+          selectedTileColor: Colors.green.withOpacity(0.1),
           title: const Text('Billings'),
           onTap: () {
-            Navigator.pop(context);
-            // Navigate to billings
+            if (name == "Billings") return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => Billing(),
+              ),
+            );
           },
         ),
         ListTile(
           leading: const Icon(Icons.bar_chart),
           title: const Text('Reports'),
+          selected: name == "Reports" ? true : false,
+          selectedTileColor: Colors.green.withOpacity(0.1),
           onTap: () {
-            Navigator.pop(context);
-            // Navigate to reports
+            if (name == "Reports") return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UnpaidOrdersReportScreen(),
+              ),
+            );
           },
         ),
         ListTile(
-          leading: const Icon(Icons.settings),
-          title: const Text('Settings'),
+          leading: const Icon(Icons.shopping_bag_outlined),
+          title: const Text('Add Sales'),
+          selected: name == "Add Sales" ? true : false,
+          selectedTileColor: Colors.green.withOpacity(0.1),
           onTap: () {
-            Navigator.pop(context);
-            // Navigate to settings
+            if (name == "Add Sales") return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddSaleScreen(),
+              ),
+            );
           },
         ),
         const Divider(),

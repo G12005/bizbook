@@ -1,5 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
-
 class Sale {
   final String id;
   final String customerId;

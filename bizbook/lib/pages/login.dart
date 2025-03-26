@@ -1,21 +1,27 @@
 import 'package:bizbook/backend/auth.dart';
+import 'package:bizbook/cus_page/cus_dashboard.dart';
 import 'package:bizbook/pages/dashboard.dart'; // Import AuthService
 import 'package:bizbook/pages/forget.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
-  _LoginPageState createState() => _LoginPageState();
+  LoginPageState createState() => LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
-  final _emailController =
-      TextEditingController(); // Renamed from _mobileController
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService(); // Initialize AuthService
-  bool _isLoading = false; // Add loading state
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
+  String _selectedUserType = 'Admin'; // Default user type
+  final List<String> _userTypes = ['Admin', 'Customer'];
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +81,26 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: 20),
                     Text(
+                      'User Type',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    DropdownButton<String>(
+                      value: _selectedUserType,
+                      isExpanded: true,
+                      items: _userTypes.map((String userType) {
+                        return DropdownMenuItem<String>(
+                          value: userType,
+                          child: Text(userType),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedUserType = newValue!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 15),
+                    Text(
                       'Email Address',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -133,19 +159,16 @@ class _LoginPageState extends State<LoginPage> {
                     _isLoading
                         ? Center(child: CircularProgressIndicator())
                         : ElevatedButton(
-                            child: Text('Login'),
                             style: ElevatedButton.styleFrom(
                               minimumSize: Size(double.infinity, 50),
                             ),
                             onPressed: () async {
                               if (_emailController.text.isEmpty ||
                                   _passwordController.text.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                        Text('Please enter email and password'),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                AuthService().showToast(
+                                  context,
+                                  'Please enter email and password',
+                                  false,
                                 );
                                 return;
                               }
@@ -154,51 +177,96 @@ class _LoginPageState extends State<LoginPage> {
                                 _isLoading = true;
                               });
 
-                              final user =
-                                  await _authService.signInWithEmailAndPassword(
-                                _emailController.text,
-                                _passwordController.text,
-                              );
-
-                              setState(() {
-                                _isLoading = false;
-                              });
-
-                              if (user != null) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const Dashboard(),
-                                  ),
+                              if (_selectedUserType == 'Admin') {
+                                // Admin login using Firebase Auth
+                                final user = await _authService
+                                    .signInWithEmailAndPassword(
+                                  _emailController.text,
+                                  _passwordController.text,
                                 );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Invalid email or password!'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                if (user != null) {
+                                  if (!context.mounted) return;
+
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const Dashboard(),
+                                    ),
+                                  );
+                                } else {
+                                  if (!context.mounted) return;
+                                  AuthService().showToast(
+                                    context,
+                                    "Invalid email or password!",
+                                    false,
+                                  );
+                                }
+                              } else if (_selectedUserType == 'Customer') {
+                                // Customer login using Firebase Realtime Database
+                                final customerSnapshot = await FirebaseDatabase
+                                    .instance
+                                    .ref()
+                                    .child('customers')
+                                    .orderByChild('email')
+                                    .equalTo(_emailController.text)
+                                    .once();
+
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                if (customerSnapshot.snapshot.value != null) {
+                                  final customerData =
+                                      (customerSnapshot.snapshot.value as Map)
+                                          .values
+                                          .first;
+
+                                  if (customerData['password'] ==
+                                      _passwordController.text) {
+                                    // Save customer details in SharedPreferences
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString('customerId',
+                                        customerData['customerId']);
+                                    await prefs.setString(
+                                        'customerName', customerData['name']);
+
+                                    if (!context.mounted) return;
+
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const CusDashboard(),
+                                      ),
+                                    );
+                                  } else {
+                                    if (!context.mounted) return;
+                                    AuthService().showToast(
+                                      context,
+                                      "Invalid email or password!",
+                                      false,
+                                    );
+                                  }
+                                } else {
+                                  if (!context.mounted) return;
+
+                                  AuthService().showToast(
+                                    context,
+                                    "Customer not found!",
+                                    false,
+                                  );
+                                }
                               }
                             },
+                            child: Text('Login'),
                           ),
                     SizedBox(height: 15),
-                    Center(
-                      child: RichText(
-                        text: TextSpan(
-                          style: TextStyle(fontSize: 14, color: Colors.black),
-                          children: [
-                            TextSpan(text: "Don't have an account? "),
-                            TextSpan(
-                              text: 'Signup!',
-                              style: TextStyle(
-                                color: Color(0xFF5F7C58),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),

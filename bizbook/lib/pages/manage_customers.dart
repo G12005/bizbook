@@ -825,7 +825,29 @@ class EditCustomerScreenState extends State<EditCustomerScreen> {
       };
 
       if (widget.isNewCustomer) {
-        await _database.push().set(customerData);
+        final newCustomerRef = _database.push();
+        await newCustomerRef.set(customerData);
+        final uniqueKey = newCustomerRef.key;
+        if (uniqueKey!.isNotEmpty) {
+          final customerData = {
+            'name': _nameController.text,
+            'email': _emailController.text,
+            'password': _passwordController.text,
+            'phoneNumber': _phoneController.text,
+            'customerId': uniqueKey,
+            'address': _addressController.text,
+            'createdAt': widget.isNewCustomer
+                ? now.toIso8601String().split('T')[0]
+                : widget.customer!.createdAt.toIso8601String().split('T')[0],
+            'totalSpent':
+                widget.isNewCustomer ? 0.0 : widget.customer!.totalSpent,
+            'totalOrders':
+                widget.isNewCustomer ? 0 : widget.customer!.totalOrders,
+            'photoUrl':
+                widget.isNewCustomer ? '' : (widget.customer!.photoUrl ?? ''),
+          };
+          await _database.child(uniqueKey).update(customerData);
+        }
       } else {
         await _database.child(widget.customer!.id).update(customerData);
       }

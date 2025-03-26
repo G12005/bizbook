@@ -2,6 +2,7 @@ import 'package:bizbook/pages/add_sale.dart';
 import 'package:bizbook/pages/daily_summary.dart';
 import 'package:bizbook/pages/inventory.dart';
 import 'package:bizbook/pages/manage_customers.dart';
+import 'package:bizbook/pages/profile.dart';
 import 'package:bizbook/pages/reports.dart';
 import 'package:bizbook/widget/appbar.dart';
 import 'package:flutter/material.dart';
@@ -152,11 +153,21 @@ class Dashboard extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: DashboardCard(
-                            title: 'Profile',
-                            icon: 'assets/profile_icon.png',
-                            height: 160,
-                            useAvatar: true,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditProfilePage(),
+                                ),
+                              );
+                            },
+                            child: DashboardCard(
+                              title: 'Profile',
+                              icon: 'assets/profile_icon.png',
+                              height: 160,
+                              useAvatar: true,
+                            ),
                           ),
                         ),
                       ],

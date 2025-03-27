@@ -19,7 +19,7 @@ class InventoryItem {
     required this.lastTimeStamp,
   });
 
-  bool get isLowStock => quantity < 10;
+  bool get isLowStock => quantity < 20;
 
   Map<String, dynamic> toMap() {
     return {

@@ -2,7 +2,7 @@ import 'package:bizbook/backend/auth.dart';
 import 'package:bizbook/widget/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:whatsapp_share/whatsapp_share.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UnpaidOrdersReportScreen extends StatefulWidget {
   const UnpaidOrdersReportScreen({super.key});
@@ -280,11 +280,12 @@ class CustomerDetailScreen extends StatelessWidget {
 
   Future<void> _sendPaymentReminder(BuildContext context) async {
     try {
-      await WhatsappShare.share(
-        text:
-            'Dear ${customer['name']},\n\nThis is a friendly reminder that you have unpaid orders totaling ₹${customer['totalDueAmount'].toStringAsFixed(2)}. Please arrange for payment at your earliest convenience.\n\nThank you,\nBiZBook',
-        phone: customer['phoneNumber'],
-      );
+      String whatsappUrl =
+          'https://wa.me/${customer['phoneNumber']}?text=${Uri.encodeComponent('Dear ${customer['name']},\n\nThis is a friendly reminder that you have unpaid orders totaling ₹${customer['totalDueAmount'].toStringAsFixed(2)}. Please arrange for payment at your earliest convenience.\n\nThank you,\nBiZBook')}';
+
+      if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+        await launchUrl(Uri.parse(whatsappUrl));
+      }
     } catch (error) {
       if (!context.mounted) return;
       AuthService().showToast(context, "Error sending reminder", false);

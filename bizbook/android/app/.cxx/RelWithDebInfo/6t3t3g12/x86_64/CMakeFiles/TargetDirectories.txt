@@ -1,0 +1,2 @@
+/Users/bishaldas/GIT_Projects/bizbook/bizbook/android/app/.cxx/RelWithDebInfo/6t3t3g12/x86_64/CMakeFiles/edit_cache.dir
+/Users/bishaldas/GIT_Projects/bizbook/bizbook/android/app/.cxx/RelWithDebInfo/6t3t3g12/x86_64/CMakeFiles/rebuild_cache.dir

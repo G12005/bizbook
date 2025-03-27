@@ -117,7 +117,7 @@ Widget drawer(BuildContext context, String name) {
         ),
         ListTile(
           leading: const Icon(Icons.bar_chart),
-          title: const Text('Reports'),
+          title: const Text('Unpaid Orders'),
           selected: name == "Reports" ? true : false,
           selectedTileColor: Colors.green.withOpacity(0.1),
           onTap: () {
@@ -190,61 +190,26 @@ AppBar backAppBar(String name, BuildContext context, List<Widget>? actions) {
 AppBar appbaar(String name) {
   int notificationCount = 1; // Example notification count
   return AppBar(
-    backgroundColor: const Color(0xFF7BA37E),
-    title: Text(
-      name,
-      style: const TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
+      backgroundColor: const Color(0xFF7BA37E),
+      title: Text(
+        name,
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
-    ),
-    leading: Builder(
-      builder: (context) => IconButton(
-        icon: const Icon(Icons.menu, color: Colors.white, size: 28),
-        onPressed: () {
-          Scaffold.of(context).openDrawer();
-        },
+      leading: Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+          onPressed: () {
+            Scaffold.of(context).openDrawer();
+          },
+        ),
       ),
-    ),
-    actions: [
-      Stack(
-        children: [
-          IconButton(
-            icon:
-                const Icon(Icons.notifications, color: Colors.white, size: 28),
-            onPressed: () {
-              // Show notifications
-              notificationCount = 0; // Clear notifications when viewed
-            },
-          ),
-          if (notificationCount > 0)
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.amber,
-                  shape: BoxShape.circle,
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
-                child: Text(
-                  notificationCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-        ],
-      ),
-    ],
+      actions: [
+    ]
+      
+    
   );
 }

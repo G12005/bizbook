@@ -124,7 +124,7 @@ class Dashboard extends StatelessWidget {
                               );
                             },
                             child: DashboardCard(
-                              title: 'Reports',
+                              title: 'Unpaid Orders',
                               icon: 'assets/reports_icon.png',
                               height: 160,
                             ),

@@ -4,6 +4,7 @@ import 'package:bizbook/pages/login.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CusDashboard extends StatefulWidget {
   const CusDashboard({super.key});
@@ -413,6 +414,25 @@ class _CusDashboardState extends State<CusDashboard> {
                     ),
                   ),
             const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ElevatedButton(
+                onPressed: () => shareFeedBack(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF8D6E63),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: const Text(
+                  'Share FeedBack',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -493,5 +513,13 @@ class _CusDashboardState extends State<CusDashboard> {
         ),
       ],
     );
+  }
+
+  void shareFeedBack() async {
+    String url =
+        "https://docs.google.com/forms/d/e/1FAIpQLScbJjPZdSSQIdFDk56ls5LlrTC2cXLpnPG47uJ4qfhCGg8-Mw/viewform?usp=dialog";
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    }
   }
 }

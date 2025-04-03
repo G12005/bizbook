@@ -14,7 +14,7 @@ class Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appbaar('Dashboard'),
+      appBar: appbaar('Dashboard', []),
       drawer: drawer(context, 'Dashboard'),
       body: Column(
         children: [

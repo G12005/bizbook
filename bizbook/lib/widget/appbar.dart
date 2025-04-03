@@ -187,29 +187,26 @@ AppBar backAppBar(String name, BuildContext context, List<Widget>? actions) {
   );
 }
 
-AppBar appbaar(String name) {
+AppBar appbaar(String name, List<Widget>? actions) {
   int notificationCount = 1; // Example notification count
   return AppBar(
-      backgroundColor: const Color(0xFF7BA37E),
-      title: Text(
-        name,
-        style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
+    backgroundColor: const Color(0xFF7BA37E),
+    title: Text(
+      name,
+      style: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
       ),
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white, size: 28),
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
-        ),
+    ),
+    leading: Builder(
+      builder: (context) => IconButton(
+        icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+        onPressed: () {
+          Scaffold.of(context).openDrawer();
+        },
       ),
-      actions: [
-    ]
-      
-    
+    ),
+    actions: actions,
   );
 }

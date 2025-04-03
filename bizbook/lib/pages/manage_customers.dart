@@ -133,7 +133,7 @@ class CustomersScreenState extends State<CustomersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: drawer(context, "Customers"),
-      appBar: appbaar("Customers"),
+      appBar: appbaar("Customers", []),
       body: Column(
         children: [
           Padding(

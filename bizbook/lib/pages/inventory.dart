@@ -125,7 +125,7 @@ class InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appbaar('Inventory'),
+      appBar: appbaar('Inventory', []),
       drawer: drawer(context, 'Inventory'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

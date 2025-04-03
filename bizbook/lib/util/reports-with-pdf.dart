@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bizbook/backend/auth.dart';
+import 'package:bizbook/backend/sale_model.dart';
 import 'package:bizbook/util/pdf_export.dart';
 import 'package:bizbook/widget/appbar.dart';
 import 'package:flutter/material.dart';
@@ -22,75 +23,6 @@ class _UnpaidOrdersReportScreenState extends State<UnpaidOrdersReportScreen> {
   List<Map<String, dynamic>> _filteredCustomers = [];
   bool _isLoading = true;
   bool _isExporting = false;
-
-  Future<void> _exportToPdf() async {
-    if (_filteredCustomers.isEmpty) {
-      AuthService().showToast(context, "No data to export", false);
-      return;
-    }
-
-    setState(() {
-      _isExporting = true;
-    });
-
-    try {
-      final file = await PdfExportUtil.generateUnpaidOrdersReport(
-        _filteredCustomers,
-        'Unpaid Orders Report',
-      );
-
-      setState(() {
-        _isExporting = false;
-      });
-
-      // Show options dialog
-      if (!mounted) return;
-      _showPdfOptionsDialog(file);
-    } catch (e) {
-      setState(() {
-        _isExporting = false;
-      });
-      if (!mounted) return;
-      AuthService().showToast(context, "Failed to export PDF: $e", false);
-    }
-  }
-
-  void _showPdfOptionsDialog(File file) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('PDF Generated'),
-        content: const Text(
-            'Your report has been generated. What would you like to do?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              PdfExportUtil.openPDF(file).catchError((error) {
-                AuthService()
-                    .showToast(context, "Failed to open PDF: $error", false);
-              });
-            },
-            child: const Text('Open'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              PdfExportUtil.sharePDF(file).catchError((error) {
-                AuthService()
-                    .showToast(context, "Failed to share PDF: $error", false);
-              });
-            },
-            child: const Text('Share'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -183,25 +115,100 @@ class _UnpaidOrdersReportScreenState extends State<UnpaidOrdersReportScreen> {
     });
   }
 
+  Future<void> _exportToPdf() async {
+    if (_filteredCustomers.isEmpty) {
+      AuthService().showToast(context, "No data to export", false);
+      return;
+    }
+
+    setState(() {
+      _isExporting = true;
+    });
+
+    try {
+      final file = await PdfExportUtil.generateUnpaidOrdersReport(
+        _filteredCustomers,
+        'Unpaid Orders Report',
+      );
+
+      setState(() {
+        _isExporting = false;
+      });
+
+      // Show options dialog
+      if (!mounted) return;
+      _showPdfOptionsDialog(file);
+    } catch (e) {
+      setState(() {
+        _isExporting = false;
+      });
+      if (!mounted) return;
+      AuthService().showToast(context, "Failed to export PDF: $e", false);
+    }
+  }
+
+  void _showPdfOptionsDialog(File file) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('PDF Generated'),
+        content: const Text(
+            'Your report has been generated. What would you like to do?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              PdfExportUtil.openPDF(file).catchError((error) {
+                AuthService()
+                    .showToast(context, "Failed to open PDF: $error", false);
+              });
+            },
+            child: const Text('Open'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              PdfExportUtil.sharePDF(file).catchError((error) {
+                AuthService()
+                    .showToast(context, "Failed to share PDF: $error", false);
+              });
+            },
+            child: const Text('Share'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appbaar("Unpaid Orders Report", [
-        IconButton(
-          icon: _isExporting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Icon(Icons.picture_as_pdf),
-          tooltip: 'Export to PDF',
-          onPressed: _isExporting ? null : _exportToPdf,
-        ),
-      ]),
+      appBar: AppBar(
+        title: const Text("Unpaid Orders Report"),
+        backgroundColor: const Color(0xFF8D6E63),
+        foregroundColor: Colors.white,
+        actions: [
+          // PDF Export button
+          IconButton(
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.picture_as_pdf),
+            tooltip: 'Export to PDF',
+            onPressed: _isExporting ? null : _exportToPdf,
+          ),
+        ],
+      ),
       drawer: drawer(context, "Reports"),
       body: Column(
         children: [
@@ -380,6 +387,103 @@ class CustomerDetailScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _exportCustomerDetailToPdf(BuildContext context) async {
+    try {
+      // Show loading indicator
+      final loadingDialog = AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text("Generating PDF..."),
+          ],
+        ),
+      );
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => loadingDialog,
+      );
+
+      // Get unpaid orders
+      final unpaidOrders =
+          List<Map<String, dynamic>>.from(customer['unpaidOrders'] as List);
+
+      // Generate PDF for each unpaid order
+      if (unpaidOrders.isEmpty) {
+        Navigator.pop(context); // Close loading dialog
+        AuthService().showToast(context, "No orders to export", false);
+        return;
+      }
+
+      // For simplicity, we'll just export the first unpaid order
+      final order = unpaidOrders.first;
+
+      // Convert to Sale object
+      final sale = Sale(
+        id: order['id'] ?? '',
+        customerId: customer['id'] ?? '',
+        customerName: customer['name'] ?? 'Unknown',
+        amount: (order['amount'] ?? 0.0).toDouble(),
+        date: DateTime.parse(order['date'] ?? DateTime.now().toIso8601String()),
+        items: [], // We would need to populate this from the order items
+        paymentMethod: order['paymentMethod'] ?? 'Cash',
+        notes: order['notes'] ?? '',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      final file = await PdfExportUtil.generateSaleDetailReport(sale);
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Show options dialog
+      _showPdfOptionsDialog(context, file);
+    } catch (e) {
+      // Close loading dialog if open
+      Navigator.pop(context);
+      AuthService().showToast(context, "Failed to export PDF: $e", false);
+    }
+  }
+
+  void _showPdfOptionsDialog(BuildContext context, File file) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('PDF Generated'),
+        content: const Text(
+            'Your report has been generated. What would you like to do?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              PdfExportUtil.openPDF(file).catchError((error) {
+                AuthService()
+                    .showToast(context, "Failed to open PDF: $error", false);
+              });
+            },
+            child: const Text('Open'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              PdfExportUtil.sharePDF(file).catchError((error) {
+                AuthService()
+                    .showToast(context, "Failed to share PDF: $error", false);
+              });
+            },
+            child: const Text('Share'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final unpaidOrders =
@@ -387,7 +491,23 @@ class CustomerDetailScreen extends StatelessWidget {
     final totalDue = customer['totalDueAmount'] ?? 0;
 
     return Scaffold(
-      appBar: backAppBar(customer['name'] ?? 'Customer Details', context, []),
+      appBar: AppBar(
+        title: Text(customer['name'] ?? 'Customer Details'),
+        backgroundColor: Color(0xFF8D6E63),
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          // PDF Export button
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf),
+            tooltip: 'Export to PDF',
+            onPressed: () => _exportCustomerDetailToPdf(context),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -482,20 +602,26 @@ class CustomerDetailScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ElevatedButton(
-                onPressed: () => _sendPaymentReminder(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF8D6E63),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _sendPaymentReminder(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF8D6E63),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      child: const Text(
+                        'Send Payment Reminder',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Send Payment Reminder',
-                  style: TextStyle(fontSize: 16),
-                ),
+                ],
               ),
             ),
             const SizedBox(height: 24),

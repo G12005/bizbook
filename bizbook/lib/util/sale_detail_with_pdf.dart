@@ -6,20 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:bizbook/widget/appbar.dart';
 
-class SaleDetailScreen extends StatefulWidget {
+class SaleDetailScreen extends StatelessWidget {
   final Sale sale;
+  bool _isExporting = false;
 
-  const SaleDetailScreen({
+  SaleDetailScreen({
     super.key,
     required this.sale,
   });
 
-  @override
-  State<SaleDetailScreen> createState() => _SaleDetailScreenState();
-}
-
-class _SaleDetailScreenState extends State<SaleDetailScreen> {
-  bool _isExporting = false;
   Future<void> _exportToPdf(BuildContext context) async {
     try {
       // Show loading indicator
@@ -39,7 +34,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         builder: (BuildContext context) => loadingDialog,
       );
 
-      final file = await PdfExportUtil.generateSaleDetailReport(widget.sale);
+      final file = await PdfExportUtil.generateSaleDetailReport(sale);
 
       // Close loading dialog
       Navigator.pop(context);
@@ -100,13 +95,23 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final timeFormat = DateFormat('h:mm a');
 
     return Scaffold(
-      appBar: backAppBar('Sale Details', context, [
-        IconButton(
-          icon: Icon(Icons.picture_as_pdf),
-          tooltip: 'Export to PDF',
-          onPressed: () => _exportToPdf(context),
+      appBar: AppBar(
+        title: Text('Sale Details'),
+        backgroundColor: Color(0xFF8B5E5A),
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
-      ]),
+        actions: [
+          // PDF Export button
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf),
+            tooltip: 'Export to PDF',
+            onPressed: () => _exportToPdf(context),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -132,7 +137,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         ),
                       ),
                       Text(
-                        '#${widget.sale.id.substring(0, min(8, widget.sale.id.length))}',
+                        '#${sale.id.substring(0, min(8, sale.id.length))}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF8B5E5A),
@@ -151,7 +156,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         ),
                       ),
                       Text(
-                        '${dateFormat.format(widget.sale.date)} at ${timeFormat.format(widget.sale.date)}',
+                        '${dateFormat.format(sale.date)} at ${timeFormat.format(sale.date)}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF8B5E5A),
@@ -170,7 +175,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         ),
                       ),
                       Text(
-                        widget.sale.paymentMethod,
+                        sale.paymentMethod,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF8B5E5A),
@@ -216,7 +221,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.sale.customerName,
+                          sale.customerName,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -224,7 +229,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                           ),
                         ),
                         Text(
-                          'Customer ID: ${widget.sale.customerId}',
+                          'Customer ID: ${sale.customerId}',
                           style: TextStyle(
                             color: Colors.grey.shade700,
                           ),
@@ -252,15 +257,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 color: const Color(0xFFF2EBE6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: widget.sale.items.isNotEmpty
+              child: sale.items.isNotEmpty
                   ? ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: widget.sale.items.length,
+                      itemCount: sale.items.length,
                       separatorBuilder: (context, index) =>
                           const Divider(height: 1),
                       itemBuilder: (context, index) {
-                        final item = widget.sale.items[index];
+                        final item = sale.items[index];
                         return Padding(
                           padding: const EdgeInsets.all(16),
                           child: Row(
@@ -351,7 +356,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             const SizedBox(height: 24),
 
             // Notes
-            if (widget.sale.notes.isNotEmpty) ...[
+            if (sale.notes.isNotEmpty) ...[
               const Text(
                 'Notes',
                 style: TextStyle(
@@ -369,7 +374,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  widget.sale.notes,
+                  sale.notes,
                   style: const TextStyle(
                     color: Color(0xFF8B5E5A),
                   ),
@@ -397,7 +402,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     ),
                   ),
                   Text(
-                    '₹${widget.sale.amount.toStringAsFixed(2)}',
+                    '₹${sale.amount.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

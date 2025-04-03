@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:bizbook/backend/sale_model.dart';
 import 'package:bizbook/pages/sale_detail.dart';
+import 'package:bizbook/util/pdf_export.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
@@ -16,6 +19,8 @@ class DailySummaryScreen extends StatefulWidget {
 class DailySummaryScreenState extends State<DailySummaryScreen> {
   final DatabaseRepository _repository = DatabaseRepository();
   bool _isLoading = true;
+  bool _isExportingDaily = false;
+  bool _isExportingMonthly = false;
   int _notificationCount = 1;
 
   // Summary data
@@ -26,6 +31,9 @@ class DailySummaryScreenState extends State<DailySummaryScreen> {
   int _totalInventory = 0;
   int _lowStockItems = 0;
   List<Sale> _recentSales = [];
+
+  // All sales data for reports
+  List<Sale> _allSales = [];
 
   @override
   void initState() {
@@ -59,6 +67,19 @@ class DailySummaryScreenState extends State<DailySummaryScreen> {
     try {
       final summary = await _repository.getDailySummary();
 
+      // Load all sales for reports
+      final salesSnapshot =
+          await FirebaseDatabase.instance.ref().child('sales').get();
+      List<Sale> allSales = [];
+
+      if (salesSnapshot.exists) {
+        final salesData = salesSnapshot.value as Map<dynamic, dynamic>;
+        salesData.forEach((key, value) {
+          final sale = Sale.fromMap(key, value as Map<dynamic, dynamic>);
+          allSales.add(sale);
+        });
+      }
+
       setState(() {
         _todaySales = summary['todaySales'];
         _todayRevenue = summary['todayRevenue'];
@@ -67,6 +88,7 @@ class DailySummaryScreenState extends State<DailySummaryScreen> {
         _totalInventory = summary['totalInventory'];
         _lowStockItems = summary['lowStockItems'];
         _recentSales = summary['recentSales'];
+        _allSales = allSales;
         _isLoading = false;
       });
     } catch (e) {
@@ -75,6 +97,166 @@ class DailySummaryScreenState extends State<DailySummaryScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _exportDailySalesReport() async {
+    if (_allSales.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No sales data to export')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isExportingDaily = true;
+    });
+
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+      // Filter sales for today
+      final todaySales = _allSales.where((sale) {
+        final saleDate = DateFormat('yyyy-MM-dd').format(sale.date);
+        return saleDate == today;
+      }).toList();
+
+      if (todaySales.isEmpty) {
+        setState(() {
+          _isExportingDaily = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No sales data for today')),
+        );
+        return;
+      }
+
+      final file = await PdfExportUtil.generateDailySalesReport(
+        todaySales,
+        _todayRevenue,
+        _newCustomers,
+      );
+
+      setState(() {
+        _isExportingDaily = false;
+      });
+
+      // Show options dialog
+      _showPdfOptionsDialog(file);
+    } catch (e) {
+      setState(() {
+        _isExportingDaily = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to export PDF: $e')),
+      );
+    }
+  }
+
+  Future<void> _exportMonthlySalesReport() async {
+    if (_allSales.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No sales data to export')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isExportingMonthly = true;
+    });
+
+    try {
+      final now = DateTime.now();
+      final currentMonth = now.month;
+      final currentYear = now.year;
+
+      // Filter sales for current month
+      final monthlySales = _allSales.where((sale) {
+        return sale.date.month == currentMonth && sale.date.year == currentYear;
+      }).toList();
+
+      if (monthlySales.isEmpty) {
+        setState(() {
+          _isExportingMonthly = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No sales data for this month')),
+        );
+        return;
+      }
+
+      // Calculate total monthly revenue
+      final monthlyRevenue =
+          monthlySales.fold(0.0, (sum, sale) => sum + sale.amount);
+
+      // Count unique customers this month
+      final Set<String> uniqueCustomers = {};
+      for (var sale in monthlySales) {
+        uniqueCustomers.add(sale.customerId);
+      }
+
+      final file = await PdfExportUtil.generateMonthlySalesReport(
+        monthlySales,
+        monthlyRevenue,
+        uniqueCustomers.length,
+      );
+
+      setState(() {
+        _isExportingMonthly = false;
+      });
+
+      // Show options dialog
+      _showPdfOptionsDialog(file);
+    } catch (e) {
+      setState(() {
+        _isExportingMonthly = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to export PDF: $e')),
+      );
+    }
+  }
+
+  void _showPdfOptionsDialog(File file) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('PDF Generated'),
+        content: const Text(
+            'Your report has been generated. What would you like to do?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              PdfExportUtil.openPDF(file).catchError((error) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed to open PDF: $error")),
+                );
+              });
+            },
+            child: const Text('Open'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              PdfExportUtil.sharePDF(file).catchError((error) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed to share PDF: $error")),
+                );
+              });
+            },
+            child: const Text('Share'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -86,45 +268,36 @@ class DailySummaryScreenState extends State<DailySummaryScreen> {
         "Daily Summary",
         context,
         [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications,
-                    color: Colors.white, size: 28),
-                onPressed: () {
-                  // Show notifications
-                  setState(() {
-                    _notificationCount = 0; // Clear notifications when viewed
-                  });
-                },
-              ),
-              if (_notificationCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.amber,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      _notificationCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+          // Daily Report Export button
+          _isExportingDaily
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
                   ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.today, color: Colors.white),
+                  tooltip: 'Export Daily Report',
+                  onPressed: _exportDailySalesReport,
                 ),
-            ],
-          ),
+          // Monthly Report Export button
+          _isExportingMonthly
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.calendar_month, color: Colors.white),
+                  tooltip: 'Export Monthly Report',
+                  onPressed: _exportMonthlySalesReport,
+                ),
         ],
       ),
       body: RefreshIndicator(
@@ -268,13 +441,27 @@ class DailySummaryScreenState extends State<DailySummaryScreen> {
                     const SizedBox(height: 24),
 
                     // Recent transactions
-                    const Text(
-                      'Today\'s Transactions',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF8B5E5A),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Today\'s Transactions',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF8B5E5A),
+                          ),
+                        ),
+                        if (_recentSales.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: _exportDailySalesReport,
+                            icon: const Icon(Icons.picture_as_pdf, size: 18),
+                            label: const Text('Export'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Color(0xFF8B5E5A),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Container(

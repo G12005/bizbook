@@ -57,7 +57,7 @@ class _BillingState extends State<Billing> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appbaar("Billing"),
+      appBar: appbaar("Billing", []),
       drawer: drawer(context, "Billings"),
       body: Column(
         children: [
